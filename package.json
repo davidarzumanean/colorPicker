@@ -4,9 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node --loader ts-node/esm index.ts",
-    "build": "webpack --watch"
+    "ts-watch": "webpack --watch",
+    "build": "webpack"
   },
   "keywords": [],
   "author": "",
