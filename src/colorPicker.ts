@@ -1,38 +1,54 @@
+import {getColorFromPixelData, getContrastTextColor} from "./utils";
+
 export class ColorPicker {
-    board: HTMLCanvasElement | null = null;
-    boardCtx: CanvasRenderingContext2D | null = null;
+    board: HTMLCanvasElement;
+    boardCtx: CanvasRenderingContext2D;
     isBoardExpanded: boolean = false;
-    magnifierCanvas: HTMLCanvasElement | null = null;
+    magnifierCanvas: HTMLCanvasElement;
     magnifierCtx: CanvasRenderingContext2D | null = null;
     isPickerActive: boolean = false;
     _color: string | null = null;
     magnifier: HTMLElement | null = null;
-    pickerBtn: HTMLButtonElement | null = null;
+    pickerBtn: HTMLButtonElement;
+    zoomFactorSelect: HTMLSelectElement;
 
     magnifierSize = 100;
     zoomFactor = 2;
     gridSize = 9;
 
-    constructor(board: HTMLCanvasElement, boardCtx: CanvasRenderingContext2D, isExpanded: boolean) {
+    constructor(
+        board: HTMLCanvasElement,
+        boardCtx: CanvasRenderingContext2D,
+        isExpanded: boolean,
+        magnifierContainer: HTMLDivElement,
+        magnifierCanvas: HTMLCanvasElement,
+        pickerBtn: HTMLButtonElement,
+        zoomFactorSelect: HTMLSelectElement
+    ) {
         this.board = board;
         this.boardCtx = boardCtx;
         this.isBoardExpanded = isExpanded;
+        this.magnifier = magnifierContainer;
+        this.magnifierCanvas = magnifierCanvas;
+        this.pickerBtn = pickerBtn;
+        this.zoomFactorSelect = zoomFactorSelect;
+
         this.initPicker();
         this.initPickerButton();
         this.initZoomFactor();
-        this.initMagnifier = this.initMagnifier.bind(this)
-        this.showMagnifier = this.showMagnifier.bind(this)
-        this.toggleMagnifier = this.toggleMagnifier.bind(this)
-        this.saveColorToClipboard = this.saveColorToClipboard.bind(this)
+    }
+
+    destroy() {
+        this.board.removeEventListener("mousemove", this.showMagnifier);
+        this.board.removeEventListener("mouseleave", this.hideMagnifier);
+        this.board.removeEventListener("click", this.saveColorToClipboard);
+        this.pickerBtn.removeEventListener("click", this.toggleMagnifier);
+        this.zoomFactorSelect?.removeEventListener('change', this.handleZoomChangeListener);
     }
 
     set color (color: string | null) {
         this._color = color;
-
-        document.getElementById('current-color')!.innerText = this.color || "";
-        document.getElementById('current-color')!.style.backgroundColor = this.color || "";
-        document.getElementById('current-color')!.style.color = this.getContrastTextColor(this.color!) || "";
-        document.getElementById('color-container')!.innerText = this.color || "";
+        this.updateColorView();
     }
 
     get color () {
@@ -42,30 +58,31 @@ export class ColorPicker {
     initPicker() {
         this.magnifierCanvas = document.getElementById("magnifier-canvas") as HTMLCanvasElement;
 
-        if (!this.magnifierCanvas) return;
-
-        this.magnifierCtx = this.magnifierCanvas.getContext("2d", {willReadFrequently: true});
-        this.magnifierCanvas.width = this.magnifierSize;
-        this.magnifierCanvas.height = this.magnifierSize;
+        try {
+            this.magnifierCtx = this.magnifierCanvas.getContext("2d", { willReadFrequently: true });
+            if (!this.magnifierCtx) {
+                throw new Error("Failed to create the magnifier canvas context.");
+            }
+            this.magnifierCanvas.width = this.magnifierSize;
+            this.magnifierCanvas.height = this.magnifierSize;
+        } catch (error) {
+            console.error("Error initializing magnifier canvas:", error);
+        }
     }
 
     initPickerButton() {
-        this.pickerBtn = document.getElementById('pickColorButton') as HTMLButtonElement;
-
-        this.pickerBtn.addEventListener('click', () => {
-            this.toggleMagnifier()
-        });
+        this.pickerBtn.addEventListener('click', this.toggleMagnifier);
     }
 
     initZoomFactor() {
-        const zoomFactorSelect = document.getElementById('zoomFactor') as HTMLSelectElement;
-        zoomFactorSelect.addEventListener('change', () => {
-            this.zoomFactor = parseInt(zoomFactorSelect.value);
-        });
+        this.zoomFactorSelect.addEventListener('change', this.handleZoomChangeListener);
     }
 
-    toggleMagnifier() {
-        if (!this.pickerBtn) return null;
+    handleZoomChangeListener = (): void => {
+        this.zoomFactor = parseInt(this.zoomFactorSelect.value);
+    }
+
+    toggleMagnifier = () => {
         this.isPickerActive = !this.isPickerActive;
 
         if (this.isPickerActive) {
@@ -77,16 +94,14 @@ export class ColorPicker {
         }
     }
 
-    initMagnifier() {
-        this.magnifier = document.getElementById("magnifier");
-
-        this.board?.addEventListener("mousemove", this.showMagnifier);
-        this.board?.addEventListener("mouseleave", this.hideMagnifier);
-        this.board?.addEventListener("click", this.saveColorToClipboard);
+    initMagnifier = (): void => {
+        this.board.addEventListener("mousemove", this.showMagnifier);
+        this.board.addEventListener("mouseleave", this.hideMagnifier);
+        this.board.addEventListener("click", this.saveColorToClipboard);
     }
 
-    showMagnifier(event: MouseEvent) {
-        if (!this.board || !this.magnifier || !this.magnifierCanvas || !this.magnifierCtx) return;
+    showMagnifier = (event: MouseEvent): void => {
+        if (!this.magnifier || !this.magnifierCtx) return;
         document.body.style.cursor = "none";
 
         const position = this.getMousePos(event);
@@ -114,17 +129,17 @@ export class ColorPicker {
         }
     }
 
-    hideMagnifier() {
-        this.board?.removeEventListener("mousemove", this.showMagnifier);
-        this.board?.removeEventListener("mouseleave", this.hideMagnifier);
-        this.board?.removeEventListener("click", this.saveColorToClipboard);
-        this.pickerBtn?.removeEventListener("click", this.toggleMagnifier);
-
+    hideMagnifier = () => {
+        if (!this.isPickerActive) {
+            this.board.removeEventListener("mousemove", this.showMagnifier);
+            this.board.removeEventListener("mouseleave", this.hideMagnifier);
+            this.board.removeEventListener("click", this.saveColorToClipboard);
+        }
         document.body.style.cursor = "default";
         if (this.magnifier) this.magnifier.style.display = "none";
     }
 
-    saveColorToClipboard() {
+    saveColorToClipboard = (): void => {
         if (this.isPickerActive && this.color) {
             navigator.clipboard.writeText(this.color).then(() => {
                 this.toggleMagnifier();
@@ -139,8 +154,6 @@ export class ColorPicker {
     }
 
     getZoom() {
-        if (!this.board || this.isBoardExpanded) return this.zoomFactor;
-
         const ratio = this.board?.offsetWidth / this.board?.width || 1;
 
         return this.zoomFactor * ratio
@@ -163,18 +176,17 @@ export class ColorPicker {
         if (!this.boardCtx) return 'transparent';
 
         const pixelData = this.boardCtx.getImageData(x, y, 1, 1).data;
-        return "#" + ((1 << 24) | (pixelData[0] << 16) | (pixelData[1] << 8) | pixelData[2]).toString(16).slice(1);
+        return getColorFromPixelData(pixelData);
     }
 
-    getContrastTextColor(backgroundColor: string) {
-        const hex = backgroundColor.replace("#", "");
-        const r = parseInt(hex.substring(0, 2), 16);
-        const g = parseInt(hex.substring(2, 4), 16);
-        const b = parseInt(hex.substring(4, 6), 16);
+    updateColorView() {
+        if (!this.color) return;
+        const currentColor = document.getElementById('current-color')!;
 
-        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-        return luminance > 0.5 ? "#000" : "#fff";
+        currentColor.innerText = this.color;
+        currentColor.style.backgroundColor = this.color;
+        currentColor.style.color = getContrastTextColor(this.color);
+        document.getElementById('color-container')!.innerText = this.color;
     }
 
     _drawMagnifierGrid() {
