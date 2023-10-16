@@ -1,19 +1,19 @@
 export class Canvas {
-    _canvas: HTMLCanvasElement | null = null;
-    ctx: CanvasRenderingContext2D | null = null;
-    isExpanded: boolean = false;
+    private readonly _canvas: HTMLCanvasElement;
+    private readonly ctx: CanvasRenderingContext2D | null = null;
+    private isExpanded: boolean = false;
+    private readonly toggleExpandBtnContainer: HTMLDivElement;
 
     constructor(canvasId: string, src: string) {
-        this.initCanvas(canvasId, src);
+        this._canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+        this.ctx = this.canvas.getContext("2d", {willReadFrequently: true});
+        this.toggleExpandBtnContainer = document.getElementById('expandCompressCanvas') as HTMLDivElement;
+        this.initCanvas(src);
         this.initCanvasExpandCompress();
     }
 
-    initCanvas(canvasId: string, src: string) {
-        this._canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+    private initCanvas(src: string) {
 
-        if (!this.canvas) return;
-
-        this.ctx = this.canvas.getContext("2d", {willReadFrequently: true});
         this.canvas.width = 6000;
         this.canvas.height = 4000;
 
@@ -24,37 +24,38 @@ export class Canvas {
         };
     }
 
-    get canvas() {
+    public destroy(): void {
+        this.toggleExpandBtnContainer.removeEventListener('click', this.handleExpandClick);
+    }
+
+    public get canvas() {
         return this._canvas;
     }
 
-    get context() {
+    public get context() {
         return this.ctx;
     }
 
-    get isInitialized(): boolean {
-        return !!(this.canvas && this.context);
+    public get isInitialized(): boolean {
+        return !!(this.canvas && this.ctx);
     }
 
-    get expanded(): boolean {
-        return this.isExpanded;
+    private initCanvasExpandCompress() {
+        this.toggleExpandBtnContainer.addEventListener('click', this.handleExpandClick);
     }
 
-    initCanvasExpandCompress() {
-        const toggleExpand: HTMLDivElement = document.getElementById('expandCompressCanvas') as HTMLDivElement;
-        toggleExpand.addEventListener('click', () => {
-            this.isExpanded = !this.isExpanded;
+    private handleExpandClick = (): void => {
+        this.isExpanded = !this.isExpanded;
 
-            if (this.isExpanded) {
-                this.canvas?.style.removeProperty('max-width');
-            } else {
-                this.canvas!.style.maxWidth = '100%';
-            }
+        if (this.isExpanded) {
+            this.canvas?.style.removeProperty('max-width');
+        } else {
+            this.canvas!.style.maxWidth = '100%';
+        }
 
-            const buttons = toggleExpand.querySelectorAll('.button');
-            buttons.forEach(btn => {
-                btn.classList.toggle('hide');
-            })
-        });
+        const buttons: NodeListOf<HTMLElementTagNameMap["button"]> = this.toggleExpandBtnContainer.querySelectorAll('button');
+        buttons.forEach((btn: HTMLButtonElement) => {
+            btn.classList.toggle('hide');
+        })
     }
 }

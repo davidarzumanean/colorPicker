@@ -8,5 +8,5 @@ const magnifierContainer = document.getElementById("magnifierContainer") as HTML
 
 const canvas = new Canvas('colorPickerCanvas', 'assets/bg.jpg');
 if (canvas.isInitialized) {
-    new ColorPicker(<HTMLCanvasElement>canvas.canvas, <CanvasRenderingContext2D>canvas.context, canvas.expanded, magnifierContainer, magnifierCanvas, pickerBtn, zoomFactorSelect);
+    new ColorPicker(<HTMLCanvasElement>canvas.canvas, <CanvasRenderingContext2D>canvas.context, magnifierContainer, magnifierCanvas, pickerBtn, zoomFactorSelect);
 }
