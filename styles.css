@@ -36,6 +36,7 @@ svg {
 .button {
     width: 30px;
     height: 30px;
+    background-color: #ffffff;
     border: 1px solid black;
     border-radius: 3px;
     padding: 5px;
@@ -94,5 +95,6 @@ svg {
     height: 30px;
     border-color: black;
     border-radius: 3px;
+    background-color: #ffffff;
 }
 
