@@ -13,12 +13,11 @@ export const getColorFromPixelData = (pixelData: Uint8ClampedArray): string => {
     return "#" + ((1 << 24) | (pixelData[0] << 16) | (pixelData[1] << 8) | pixelData[2]).toString(16).slice(1);
 }
 
-export const getMagnifierImageYPos = (mouseY: number, magnifierHalfSize: number, zoom: number): number => {
-    const headerHeight = 50;
+export const getMagnifierImageYPos = (mouseY: number, magnifierHalfSize: number, zoom: number, offsetTop: number): number => {
     const scrollY = window.scrollY;
-    const headerScrollDelta = headerHeight - scrollY;
+    const headerScrollDelta = offsetTop - scrollY;
 
-    if (mouseY - headerHeight + scrollY <= magnifierHalfSize && scrollY <= headerHeight) {
+    if (mouseY - offsetTop + scrollY <= magnifierHalfSize && scrollY <= offsetTop) {
         return -(mouseY - headerScrollDelta - magnifierHalfSize) / zoom;
     }
     return 0;

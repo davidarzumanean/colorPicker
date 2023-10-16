@@ -1,5 +1,20 @@
 import {getColorFromPixelData, getContrastTextColor} from "./utils";
 import {Magnifier} from "./Magnifier";
+import {defaultConfig, IConfig} from "./config";
+
+interface IColorPickerProps {
+    elements: {
+        board: HTMLCanvasElement;
+        magnifierContainer: HTMLDivElement;
+        magnifierCanvas: HTMLCanvasElement;
+        pickerBtn: HTMLButtonElement;
+        zoomFactorSelect: HTMLSelectElement;
+    },
+    events: {
+        onColorPickSuccess: () => void;
+    },
+    config: Partial<IConfig>;
+}
 
 export class ColorPicker {
     private readonly board: HTMLCanvasElement;
@@ -9,29 +24,46 @@ export class ColorPicker {
     private readonly pickerBtn: HTMLButtonElement;
     private readonly zoomFactorSelect: HTMLSelectElement;
     private readonly magnifierInstance: Magnifier;
-
-    magnifierSize = 100;
-    zoomFactor = 2;
-    gridSize = 9;
+    private readonly config: IConfig = defaultConfig;
+    private _zoomFactor: number = this.config.magnifier.defaultZoomFactor;
+    private events: IColorPickerProps['events'];
+    private mousePosition: { x: number, y: number, clientX: number, clientY: number } = {x: 0, y: 0, clientX: 0, clientY: 0};
 
     constructor(
-        board: HTMLCanvasElement,
-        boardCtx: CanvasRenderingContext2D,
-        magnifierContainer: HTMLDivElement,
-        magnifierCanvas: HTMLCanvasElement,
-        pickerBtn: HTMLButtonElement,
-        zoomFactorSelect: HTMLSelectElement
+        {
+            elements,
+            events,
+            config,
+        } : IColorPickerProps
     ) {
-        this.board = board;
-        this.boardCtx = boardCtx;
-        this.pickerBtn = pickerBtn;
-        this.zoomFactorSelect = zoomFactorSelect;
+        this.board = elements.board;
+        this.boardCtx = this.board.getContext("2d", {willReadFrequently: true})!;
+        this.pickerBtn = elements.pickerBtn;
+        this.zoomFactorSelect = elements.zoomFactorSelect;
 
         this.initPickerButton();
         this.initZoomFactorSelect();
         this.initInteractionShortcuts();
 
-        this.magnifierInstance = new Magnifier(magnifierCanvas, magnifierContainer, this.board, this.magnifierSize, this.gridSize);
+        this.config = {
+            ...config,
+            ...defaultConfig,
+        }
+        this.events = events;
+
+        this.zoomFactor = this.config.magnifier.defaultZoomFactor;
+        this.magnifierInstance = new Magnifier(elements.magnifierCanvas, elements.magnifierContainer, this.board, this.config);
+    }
+
+    set zoomFactor(value: number) {
+        this._zoomFactor = value;
+        if (this.magnifierInstance) {
+            this.magnifierInstance.render(this.mousePosition.x, this.mousePosition.y, this.mousePosition.clientX, this.mousePosition.clientY, this.zoomFactor, this.color!);
+        }
+    }
+
+    get zoomFactor() {
+        return this._zoomFactor;
     }
 
     public destroy() {
@@ -69,7 +101,7 @@ export class ColorPicker {
 
         if (this.isPickerActive) {
             this.initMagnifier();
-            this.pickerBtn.style.fill = '#0D6EFD';
+            this.pickerBtn.style.fill = this.config.activeButtonColor;
         } else {
             this.hideMagnifier();
             this.pickerBtn.style.removeProperty('fill');
@@ -86,6 +118,13 @@ export class ColorPicker {
         const position = this.getMousePos(e);
         const {x, y} = position;
         this.color = this.pickColor(x, y);
+
+        this.mousePosition = {
+            x,
+            y,
+            clientX: e.clientX,
+            clientY: e.clientY,
+        }
 
         if (x >= 0 && x <= this.board.width && y >= 0 && y <= this.board.height) {
             this.magnifierInstance.render(x, y, e.clientX, e.clientY, this.zoomFactor, this.color);
@@ -108,11 +147,7 @@ export class ColorPicker {
             navigator.clipboard.writeText(this.color).then(() => {
                 this.toggleMagnifier();
 
-                const successMsg = document.getElementById('copySuccessMsg');
-                successMsg?.classList.remove('hide');
-                setTimeout(() => {
-                    successMsg?.classList.add('hide');
-                }, 2000);
+                this.events.onColorPickSuccess();
             });
         }
     }
@@ -139,12 +174,12 @@ export class ColorPicker {
 
     private updateColorView(): void {
         if (!this.color) return;
-        const currentColor = document.getElementById('current-color')!;
+        const activeColor: HTMLDivElement = document.querySelector(this.config.activeColorSelector)!;
 
-        currentColor.innerText = this.color;
-        currentColor.style.backgroundColor = this.color;
-        currentColor.style.color = getContrastTextColor(this.color);
-        document.getElementById('color-container')!.innerText = this.color;
+        activeColor.innerText = this.color;
+        activeColor.style.backgroundColor = this.color;
+        activeColor.style.color = getContrastTextColor(this.color);
+        (document.querySelector(this.config.magnifier.colorBoxSelector) as HTMLSpanElement)!.innerText = this.color;
     }
 
     private initInteractionShortcuts(): void {
@@ -181,9 +216,9 @@ export class ColorPicker {
     private handleZoomFactorChangeShortcut = (event: KeyboardEvent): void => {
         if ((event.ctrlKey || event.metaKey) && (event.key === "+" || event.key === "=" || event.key === "-")) {
             event.preventDefault();
-            if (event.key === "+" || event.key === "=" && this.zoomFactor < 5) {
+            if (event.key === "+" || event.key === "=" && this.zoomFactor < this.config.magnifier.maxZoomFactor) {
                 this.zoomFactor += 1;
-            } else if (event.key === "-"  && this.zoomFactor > 1) {
+            } else if (event.key === "-"  && this.zoomFactor > this.config.magnifier.minZoomFactor) {
                 this.zoomFactor -= 1;
             }
 

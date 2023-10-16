@@ -32,10 +32,6 @@ export class Canvas {
         return this._canvas;
     }
 
-    public get context() {
-        return this.ctx;
-    }
-
     public get isInitialized(): boolean {
         return !!(this.canvas && this.ctx);
     }
