@@ -26,11 +26,5 @@ if (canvas.isInitialized) {
                 }, 2000);
             }
         },
-        config: {
-            magnifier: {
-                ...defaultConfig.magnifier,
-                maxZoomFactor: 7,
-            }
-        }
     });
 }

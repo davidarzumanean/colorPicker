@@ -10,10 +10,10 @@ interface IColorPickerProps {
         pickerBtn: HTMLButtonElement;
         zoomFactorSelect: HTMLSelectElement;
     },
-    events: {
+    events?: {
         onColorPickSuccess: () => void;
     },
-    config: Partial<IConfig>;
+    config?: Partial<IConfig>;
 }
 
 export class ColorPicker {
@@ -147,7 +147,7 @@ export class ColorPicker {
             navigator.clipboard.writeText(this.color).then(() => {
                 this.toggleMagnifier();
 
-                this.events.onColorPickSuccess();
+                this.events?.onColorPickSuccess();
             });
         }
     }
