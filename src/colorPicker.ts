@@ -1,4 +1,4 @@
-import {getColorFromPixelData, getContrastTextColor} from "./utils";
+import {getColorFromPixelData, getContrastTextColor, getMagnifierImageYPos} from "./utils";
 
 export class ColorPicker {
     board: HTMLCanvasElement;
@@ -100,11 +100,11 @@ export class ColorPicker {
         this.board.addEventListener("click", this.saveColorToClipboard);
     }
 
-    showMagnifier = (event: MouseEvent): void => {
+    showMagnifier = (e: MouseEvent): void => {
         if (!this.magnifier || !this.magnifierCtx) return;
         document.body.style.cursor = "none";
 
-        const position = this.getMousePos(event);
+        const position = this.getMousePos(e);
         const {x, y} = position;
 
         this.color = this.pickColor(x, y);
@@ -113,15 +113,25 @@ export class ColorPicker {
         if (x >= 0 && x <= this.board.width && y >= 0 && y <= this.board.height) {
             const magnifierHalfSize = this.magnifierSize / 2;
 
-            this.magnifier.style.left = `${event.clientX - magnifierHalfSize + window.scrollX}px`;
-            this.magnifier.style.top = `${event.clientY - magnifierHalfSize + window.scrollY}px`;
+            this.magnifier.style.left = `${e.clientX - magnifierHalfSize + window.scrollX}px`;
+            this.magnifier.style.top = `${e.clientY - magnifierHalfSize + window.scrollY}px`;
             this.magnifier.style.display = "block";
 
-            const sourceX = Math.max(0, x - magnifierHalfSize / this.getZoom());
-            const sourceY = Math.max(0, y - magnifierHalfSize / this.getZoom());
+            let sourceX = Math.max(0, x - magnifierHalfSize / this.getZoom());
+            let sourceY = Math.max(0, y - magnifierHalfSize / this.getZoom());
 
-            this.magnifierCtx.clearRect(0, 0, this.magnifierCanvas.width, this.magnifierCanvas.height);
-            this.magnifierCtx.drawImage(this.board, sourceX, sourceY, this.magnifierCanvas.width / this.getZoom(), this.magnifierCanvas.height / this.getZoom(), 0, 0, this.magnifierCanvas.width, this.magnifierCanvas.height);
+            this.magnifierCtx.clearRect(0, 0, this.magnifierSize, this.magnifierSize );
+            this.magnifierCtx.drawImage(
+                this.board,
+                sourceX,
+                sourceY,
+                this.magnifierSize / this.getZoom(),
+                this.magnifierSize / this.getZoom(),
+                0,
+                getMagnifierImageYPos(e, magnifierHalfSize),
+                this.magnifierSize,
+                this.magnifierSize
+            );
 
             this._drawMagnifierGrid();
         } else {

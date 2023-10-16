@@ -12,3 +12,14 @@ export const getContrastTextColor = (backgroundColor: string): "#000" | "#fff" =
 export const getColorFromPixelData = (pixelData: Uint8ClampedArray): string => {
     return "#" + ((1 << 24) | (pixelData[0] << 16) | (pixelData[1] << 8) | pixelData[2]).toString(16).slice(1);
 }
+
+export const getMagnifierImageYPos = (e: MouseEvent, magnifierHalfSize: number): number => {
+    const headerHeight = 50;
+    const scrollY = window.scrollY;
+    const headerScrollDelta = headerHeight - scrollY;
+
+    if (e.clientY - headerHeight + scrollY <= magnifierHalfSize && scrollY <= headerHeight) {
+        return -(e.clientY - headerScrollDelta - magnifierHalfSize);
+    }
+    return 0;
+}
