@@ -30,7 +30,19 @@ svg {
 }
 
 .canvas-container {
-    padding: 50px 0;
+    padding-top: 50px;
+}
+.canvas-container canvas {
+    vertical-align: middle;
+}
+
+footer {
+    display: flex;
+    align-items: center;
+    height: 50px;
+    padding: 0 10px;
+    background-color: #646464;
+    color: #ffffff;
 }
 
 .button {
@@ -45,6 +57,14 @@ svg {
 }
 .button:hover {
     fill: #0D6EFD;
+}
+
+.message {
+    background-color: #bbbbbb;
+    height: 30px;
+    padding: 0 10px;
+    line-height: 30px;
+    border-radius: 3px;
 }
 
 .magnifier {
@@ -69,6 +89,7 @@ svg {
 }
 
 .hex-color {
+    font-family: monospace;
     position: absolute;
     left: 50%;
     bottom: 10px;
@@ -83,6 +104,7 @@ svg {
 }
 
 .current-color {
+    font-family: monospace;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -97,4 +119,3 @@ svg {
     border-radius: 3px;
     background-color: #ffffff;
 }
-

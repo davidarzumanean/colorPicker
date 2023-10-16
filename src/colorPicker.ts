@@ -35,7 +35,8 @@ export class ColorPicker {
 
         this.initPicker();
         this.initPickerButton();
-        this.initZoomFactor();
+        this.initZoomFactorSelect();
+        this.initInteractionShortcuts();
     }
 
     destroy() {
@@ -43,7 +44,8 @@ export class ColorPicker {
         this.board.removeEventListener("mouseleave", this.hideMagnifier);
         this.board.removeEventListener("click", this.saveColorToClipboard);
         this.pickerBtn.removeEventListener("click", this.toggleMagnifier);
-        this.zoomFactorSelect?.removeEventListener('change', this.handleZoomChangeListener);
+        this.zoomFactorSelect.removeEventListener('change', this.handleZoomChangeListener);
+        this.destroyInteractionShortcuts();
     }
 
     set color (color: string | null) {
@@ -74,7 +76,7 @@ export class ColorPicker {
         this.pickerBtn.addEventListener('click', this.toggleMagnifier);
     }
 
-    initZoomFactor() {
+    initZoomFactorSelect() {
         this.zoomFactorSelect.addEventListener('change', this.handleZoomChangeListener);
     }
 
@@ -128,7 +130,7 @@ export class ColorPicker {
                 this.magnifierSize / this.getZoom(),
                 this.magnifierSize / this.getZoom(),
                 0,
-                getMagnifierImageYPos(e, magnifierHalfSize),
+                getMagnifierImageYPos(e.clientY, magnifierHalfSize),
                 this.magnifierSize,
                 this.magnifierSize
             );
@@ -220,6 +222,50 @@ export class ColorPicker {
 
                 this.magnifierCtx.strokeRect(i, j, this.gridSize, this.gridSize);
             }
+        }
+    }
+
+    initInteractionShortcuts() {
+        this.initToggleMagnifierOnDblCLick();
+        this.initHandleKeyPress();
+    }
+
+    destroyInteractionShortcuts() {
+        this.board.removeEventListener('dblclick', this.toggleMagnifier);
+        document.removeEventListener("keydown", this.handleEscapeKeyPress);
+    }
+
+    initToggleMagnifierOnDblCLick() {
+        if (!this.isPickerActive) {
+            this.board.addEventListener('dblclick', this.toggleMagnifier);
+        }
+    }
+
+    initHandleKeyPress() {
+        document.addEventListener("keydown", this.handleKeyDown);
+    }
+
+    handleKeyDown = (event: KeyboardEvent) => {
+        this.handleEscapeKeyPress(event);
+        this.handleZoomFactorChangeShortcut(event);
+    }
+
+    handleEscapeKeyPress = (event: KeyboardEvent) => {
+        if (event.key === "Escape" && this.isPickerActive) {
+            this.toggleMagnifier();
+        }
+    }
+
+    handleZoomFactorChangeShortcut = (event: KeyboardEvent) => {
+        if ((event.ctrlKey || event.metaKey) && (event.key === "+" || event.key === "=" || event.key === "-")) {
+            event.preventDefault();
+            if (event.key === "+" || event.key === "=" && this.zoomFactor < 5) {
+                this.zoomFactor += 1;
+            } else if (event.key === "-"  && this.zoomFactor > 1) {
+                this.zoomFactor -= 1;
+            }
+
+            this.zoomFactorSelect.value = this.zoomFactor.toString();
         }
     }
 }
